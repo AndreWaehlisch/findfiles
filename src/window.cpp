@@ -3,6 +3,7 @@
 
 #include "window.h"
 
+/* Setup the graphical user interface (GUI) */
 Window::Window(QWidget *parent) : QWidget(parent) {
     fileLabel = new QLabel(tr("Named:"));
     textLabel = new QLabel(tr("Containing text:"));
@@ -51,7 +52,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     setLayout(mainLayout);
 
     setWindowTitle(tr("Find Files"));
-    resize(700, 300);
+    resize(600, 300);
 }
 
 void Window::browse() {
@@ -75,7 +76,7 @@ static void updateComboBox(QComboBox *comboBox) {
 void Window::find() {
     filesTable->setRowCount(0);
 
-    QString fileName = fileComboBox->currentText();
+    const QString fileName = fileComboBox->currentText().isEmpty() ? "*" : fileComboBox->currentText();
     const QString text = textComboBox->currentText();
     const QString path = directoryComboBox->currentText();
 
@@ -86,11 +87,17 @@ void Window::find() {
     currentDir = QDir(path);
     QStringList files;
 
-    if(fileName.isEmpty()) {
-        fileName = "*";
+    QDir::Filters entryListFilters = QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot; // default to "look for files and no symlinks, also ignoring current dir and upper dir"
+
+    if(hiddenCheckBox->isChecked()) {
+        entryListFilters |= QDir::Hidden;
     }
 
-    files = currentDir.entryList(QStringList(fileName), QDir::Files | QDir::NoSymLinks);
+    if(!insensitiveCheckBox->isChecked()) {
+        entryListFilters |= QDir::CaseSensitive;
+    }
+
+    files = currentDir.entryList(QStringList(fileName), entryListFilters);
 
     if(!text.isEmpty()) {
         files = findFiles(files, text);
