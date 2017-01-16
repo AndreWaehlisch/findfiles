@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QDir>
+#include <QCheckBox>
 
 QT_BEGIN_NAMESPACE
 class QComboBox;
@@ -39,6 +40,11 @@ class Window : public QWidget {
         QPushButton *browseButton;
         QPushButton *findButton;
         QTableWidget *filesTable;
+        QCheckBox *recursiveCheckBox;
+        QCheckBox *insensitiveCheckBox;
+        QCheckBox *regexCheckBox;
+        QCheckBox *wholeWordCheckBox;
+        QCheckBox *hiddenCheckBox;
 
         QDir currentDir;
 };

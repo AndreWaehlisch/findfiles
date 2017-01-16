@@ -1,36 +1,53 @@
 #include <QtWidgets>
+#include <QCheckBox>
 
 #include "window.h"
 
-Window::Window(QWidget *parent)
-    : QWidget(parent) {
+Window::Window(QWidget *parent) : QWidget(parent) {
+    fileLabel = new QLabel(tr("Named:"));
+    textLabel = new QLabel(tr("Containing text:"));
+    directoryLabel = new QLabel(tr("In directory:"));
+    filesFoundLabel = new QLabel(tr("0 files(s) found"));
+
     browseButton = new QPushButton(tr("&Browse..."), this);
     connect(browseButton, &QAbstractButton::clicked, this, &Window::browse);
     findButton = new QPushButton(tr("&Find"), this);
     connect(findButton, &QAbstractButton::clicked, this, &Window::find);
+    recursiveCheckBox = new QCheckBox(tr("Recursive"), this);
+    insensitiveCheckBox = new QCheckBox(tr("Insensitive"), this);
+    regexCheckBox = new QCheckBox(tr("Enable Regex"), this);
+    wholeWordCheckBox = new QCheckBox(tr("Whole word"), this);
+    hiddenCheckBox = new QCheckBox(tr("Hidden files"), this);
 
     fileComboBox = createComboBox(tr("*"));
     textComboBox = createComboBox();
     directoryComboBox = createComboBox(QDir::currentPath());
 
-    fileLabel = new QLabel(tr("Named:"));
-    textLabel = new QLabel(tr("Containing text:"));
-    directoryLabel = new QLabel(tr("In directory:"));
-    filesFoundLabel = new QLabel;
-
     createFilesTable();
 
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addWidget(fileLabel, 0, 0);
-    mainLayout->addWidget(fileComboBox, 0, 1, 1, 2);
+    mainLayout->addWidget(fileComboBox, 0, 1, 1, 3);
+
     mainLayout->addWidget(textLabel, 1, 0);
-    mainLayout->addWidget(textComboBox, 1, 1, 1, 2);
+    mainLayout->addWidget(textComboBox, 1, 1, 1, 3);
+
     mainLayout->addWidget(directoryLabel, 2, 0);
-    mainLayout->addWidget(directoryComboBox, 2, 1);
-    mainLayout->addWidget(browseButton, 2, 2);
-    mainLayout->addWidget(filesTable, 3, 0, 1, 3);
-    mainLayout->addWidget(filesFoundLabel, 4, 0, 1, 2);
-    mainLayout->addWidget(findButton, 4, 2);
+    mainLayout->addWidget(directoryComboBox, 2, 1, 1, 2);
+    mainLayout->addWidget(browseButton, 2, 3);
+
+    mainLayout->addWidget(recursiveCheckBox, 3, 1);
+    mainLayout->addWidget(insensitiveCheckBox, 3, 2);
+    mainLayout->addWidget(hiddenCheckBox, 3, 3);
+
+    mainLayout->addWidget(regexCheckBox, 4, 1);
+    mainLayout->addWidget(wholeWordCheckBox, 4, 2);
+
+    mainLayout->addWidget(filesTable, 5, 0, 1, 4);
+
+    mainLayout->addWidget(filesFoundLabel, 6, 0, 1, 3);
+    mainLayout->addWidget(findButton, 6, 3);
+
     setLayout(mainLayout);
 
     setWindowTitle(tr("Find Files"));
@@ -38,8 +55,7 @@ Window::Window(QWidget *parent)
 }
 
 void Window::browse() {
-    QString directory = QFileDialog::getExistingDirectory(this,
-                        tr("Find Files"), QDir::currentPath());
+    const QString directory = QFileDialog::getExistingDirectory(this, tr("Find Files"), QDir::currentPath());
 
     if(!directory.isEmpty()) {
         if(directoryComboBox->findText(directory) == -1) {
@@ -60,8 +76,8 @@ void Window::find() {
     filesTable->setRowCount(0);
 
     QString fileName = fileComboBox->currentText();
-    QString text = textComboBox->currentText();
-    QString path = directoryComboBox->currentText();
+    const QString text = textComboBox->currentText();
+    const QString path = directoryComboBox->currentText();
 
     updateComboBox(fileComboBox);
     updateComboBox(textComboBox);
@@ -74,8 +90,7 @@ void Window::find() {
         fileName = "*";
     }
 
-    files = currentDir.entryList(QStringList(fileName),
-                                 QDir::Files | QDir::NoSymLinks);
+    files = currentDir.entryList(QStringList(fileName), QDir::Files | QDir::NoSymLinks);
 
     if(!text.isEmpty()) {
         files = findFiles(files, text);
@@ -143,8 +158,7 @@ void Window::showFiles(const QStringList &files) {
         filesTable->setItem(row, 1, sizeItem);
     }
 
-    filesFoundLabel->setText(tr("%1 file(s) found").arg(files.size()) +
-                             (" (Double click on a file to open it)"));
+    filesFoundLabel->setText(tr("%1 file(s) found").arg(files.size()) + (" (Double click on a file to open it)"));
     filesFoundLabel->setWordWrap(true);
 }
 
@@ -167,12 +181,11 @@ void Window::createFilesTable() {
     filesTable->verticalHeader()->hide();
     filesTable->setShowGrid(false);
 
-    connect(filesTable, &QTableWidget::cellActivated,
-            this, &Window::openFileOfItem);
+    connect(filesTable, &QTableWidget::cellActivated, this, &Window::openFileOfItem);
 }
 
 void Window::openFileOfItem(int row, int /* column */) {
-    QTableWidgetItem *item = filesTable->item(row, 0);
+    const QTableWidgetItem *item = filesTable->item(row, 0);
 
     QDesktopServices::openUrl(QUrl::fromLocalFile(currentDir.absoluteFilePath(item->text())));
 }
