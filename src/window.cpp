@@ -68,7 +68,7 @@ void Window::browse() {
 }
 
 static void updateComboBox(QComboBox *comboBox) {
-    if(comboBox->findText(comboBox->currentText()) == -1) {
+    if(comboBox->findText(comboBox->currentText(), Qt::MatchExactly | Qt::MatchCaseSensitive) == -1) {
         comboBox->addItem(comboBox->currentText());
     }
 }
@@ -87,7 +87,7 @@ void Window::find() {
     currentDir = QDir(path);
     QStringList files;
 
-    QDir::Filters entryListFilters = QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot; // default to "look for files and no symlinks, also ignoring current dir and upper dir"
+    QDir::Filters entryListFilters = QDir::Files | QDir::NoSymLinks ; // default to "look for files and no symlinks"
 
     if(hiddenCheckBox->isChecked()) {
         entryListFilters |= QDir::Hidden;
@@ -154,8 +154,7 @@ void Window::showFiles(const QStringList &files) {
 
         QTableWidgetItem *fileNameItem = new QTableWidgetItem(files[i]);
         fileNameItem->setFlags(fileNameItem->flags() ^ Qt::ItemIsEditable);
-        QTableWidgetItem *sizeItem = new QTableWidgetItem(tr("%1 KB")
-                .arg(int((size + 1023) / 1024)));
+        QTableWidgetItem *sizeItem = new QTableWidgetItem(tr("%1 KB").arg(int((size + 1023) / 1024)));
         sizeItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
         sizeItem->setFlags(sizeItem->flags() ^ Qt::ItemIsEditable);
 
@@ -170,8 +169,13 @@ void Window::showFiles(const QStringList &files) {
 }
 
 QComboBox *Window::createComboBox(const QString &text) {
+    /* From the Doc (http://doc.qt.io/qt-5/qcombobox.html#setCompleter):
+     * "By default, for an editable combo box, a QCompleter that performs case insensitive inline completion is automatically created."
+     * So we have to set that QCompleter to case-sensitive AFTER we setEdtiable to true. */
     QComboBox *comboBox = new QComboBox;
     comboBox->setEditable(true);
+    comboBox->completer()->setCaseSensitivity(Qt::CaseSensitive);
+    comboBox->setDuplicatesEnabled(true);
     comboBox->addItem(text);
     comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     return comboBox;
@@ -193,6 +197,5 @@ void Window::createFilesTable() {
 
 void Window::openFileOfItem(int row, int /* column */) {
     const QTableWidgetItem *item = filesTable->item(row, 0);
-
     QDesktopServices::openUrl(QUrl::fromLocalFile(currentDir.absoluteFilePath(item->text())));
 }
