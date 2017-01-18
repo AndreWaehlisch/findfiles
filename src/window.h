@@ -45,6 +45,7 @@ class Window : public QWidget {
         QCheckBox *regexCheckBox;
         QCheckBox *wholeWordCheckBox;
         QCheckBox *hiddenCheckBox;
+        QCheckBox *systemFilesCheckBox;
 
         QDir currentDir;
 };

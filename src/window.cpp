@@ -19,6 +19,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     regexCheckBox = new QCheckBox(tr("Enable Regex"), this);
     wholeWordCheckBox = new QCheckBox(tr("Whole word"), this);
     hiddenCheckBox = new QCheckBox(tr("Hidden files"), this);
+    systemFilesCheckBox = new QCheckBox(tr("System Files"), this);
 
     fileComboBox = createComboBox(tr("*"));
     textComboBox = createComboBox();
@@ -43,6 +44,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
 
     mainLayout->addWidget(regexCheckBox, 4, 1);
     mainLayout->addWidget(wholeWordCheckBox, 4, 2);
+    mainLayout->addWidget(systemFilesCheckBox, 4, 3);
 
     mainLayout->addWidget(filesTable, 5, 0, 1, 4);
 
@@ -95,6 +97,10 @@ void Window::find() {
 
     if(!insensitiveCheckBox->isChecked()) {
         entryListFilters |= QDir::CaseSensitive;
+    }
+
+    if(systemFilesCheckBox->isChecked()) {
+        entryListFilters |= QDir::System;
     }
 
     files = currentDir.entryList(QStringList(fileName), entryListFilters);
