@@ -1,6 +1,3 @@
-#include <QtWidgets>
-#include <QCheckBox>
-
 #include "window.h"
 
 /* Setup the graphical user interface (GUI) */
@@ -15,11 +12,11 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     findButton = new QPushButton(tr("&Find"), this);
     connect(findButton, &QAbstractButton::clicked, this, &Window::find);
     recursiveCheckBox = new QCheckBox(tr("Recursive"), this);
-    insensitiveCheckBox = new QCheckBox(tr("Insensitive"), this);
+    sensitiveCheckBox = new QCheckBox(tr("Match case"), this);
     regexCheckBox = new QCheckBox(tr("Enable Regex"), this);
     wholeWordCheckBox = new QCheckBox(tr("Whole word"), this);
     hiddenCheckBox = new QCheckBox(tr("Hidden files"), this);
-    systemFilesCheckBox = new QCheckBox(tr("System Files"), this);
+    systemFilesCheckBox = new QCheckBox(tr("System files"), this);
 
     fileComboBox = createComboBox(tr("*"));
     textComboBox = createComboBox();
@@ -39,7 +36,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     mainLayout->addWidget(browseButton, 2, 3);
 
     mainLayout->addWidget(recursiveCheckBox, 3, 1);
-    mainLayout->addWidget(insensitiveCheckBox, 3, 2);
+    mainLayout->addWidget(sensitiveCheckBox, 3, 2);
     mainLayout->addWidget(hiddenCheckBox, 3, 3);
 
     mainLayout->addWidget(regexCheckBox, 4, 1);
@@ -54,7 +51,7 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     setLayout(mainLayout);
 
     setWindowTitle(tr("Find Files"));
-    resize(600, 300);
+    resize(1000, 500);
 }
 
 void Window::browse() {
@@ -76,12 +73,13 @@ static void updateComboBox(QComboBox *comboBox) {
 }
 
 void Window::find() {
-    filesTable->setRowCount(0);
+    filesTable->setRowCount(0); // reset results
 
-    const QString fileName = fileComboBox->currentText().isEmpty() ? "*" : fileComboBox->currentText();
-    const QString text = textComboBox->currentText();
+    const QString fileName = fileComboBox->currentText().isEmpty() ? "*" : fileComboBox->currentText(); // use '*' if input is empty
+    const QString text = textComboBox->currentText(); // text to search for inside of files
     const QString path = directoryComboBox->currentText();
 
+    // add current input to history of combo boxes
     updateComboBox(fileComboBox);
     updateComboBox(textComboBox);
     updateComboBox(directoryComboBox);
@@ -89,26 +87,41 @@ void Window::find() {
     currentDir = QDir(path);
     QStringList files;
 
-    QDir::Filters entryListFilters = QDir::Files | QDir::NoSymLinks ; // default to "look for files and no symlinks"
+    QDir::Filters entryListFilters = QDir::Files | QDir::NoSymLinks;
 
+    // "Hidden files"
     if(hiddenCheckBox->isChecked()) {
         entryListFilters |= QDir::Hidden;
     }
 
-    if(!insensitiveCheckBox->isChecked()) {
+    // "Match case"
+    if(sensitiveCheckBox->isChecked()) {
         entryListFilters |= QDir::CaseSensitive;
     }
 
+    // "System files"
     if(systemFilesCheckBox->isChecked()) {
         entryListFilters |= QDir::System;
     }
 
-    files = currentDir.entryList(QStringList(fileName), entryListFilters);
+    // find files
+    if(recursiveCheckBox->isChecked()) {
+        QDirIterator iterator(currentDir.path(), QStringList(fileName), entryListFilters, QDirIterator::Subdirectories); // TODO: path() the correct one here?
 
+        // recursive loop over all files
+        while(iterator.hasNext()) {
+            files.append(iterator.next());
+        }
+    } else {
+        files = currentDir.entryList(QStringList(fileName), entryListFilters);
+    }
+
+    // if we got a search text search for it in the files
     if(!text.isEmpty()) {
         files = findFiles(files, text);
     }
 
+    // show results
     showFiles(files);
 }
 
@@ -184,6 +197,7 @@ QComboBox *Window::createComboBox(const QString &text) {
     comboBox->setDuplicatesEnabled(true);
     comboBox->addItem(text);
     comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
     return comboBox;
 }
 
@@ -197,7 +211,6 @@ void Window::createFilesTable() {
     filesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     filesTable->verticalHeader()->hide();
     filesTable->setShowGrid(false);
-
     connect(filesTable, &QTableWidget::cellActivated, this, &Window::openFileOfItem);
 }
 

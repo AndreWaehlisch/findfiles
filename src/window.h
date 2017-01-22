@@ -1,8 +1,9 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include <QWidget>
+#include <QtWidgets>
 #include <QDir>
+#include <QDirIterator>
 #include <QCheckBox>
 
 QT_BEGIN_NAMESPACE
@@ -41,7 +42,7 @@ class Window : public QWidget {
         QPushButton *findButton;
         QTableWidget *filesTable;
         QCheckBox *recursiveCheckBox;
-        QCheckBox *insensitiveCheckBox;
+        QCheckBox *sensitiveCheckBox;
         QCheckBox *regexCheckBox;
         QCheckBox *wholeWordCheckBox;
         QCheckBox *hiddenCheckBox;
