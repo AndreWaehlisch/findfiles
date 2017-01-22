@@ -1,11 +1,10 @@
 QT += widgets
 
+TARGET        = FindFiles
+TEMPLATE      = app
+
 HEADERS       = window.h
 SOURCES       = main.cpp \
                 window.cpp
 
-# install
-target.path = $$[QT_INSTALL_EXAMPLES]/widgets/dialogs/findfiles
-INSTALLS += target
-
-RESOURCES += licence.qrc
+RESOURCES += ../resources/resources.qrc

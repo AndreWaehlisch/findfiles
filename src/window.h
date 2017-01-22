@@ -1,18 +1,16 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include <QtWidgets>
-#include <QDir>
-#include <QDirIterator>
+#include <QWidget>
+#include <QStringList>
+#include <QString>
+#include <QRegularExpression>
+#include <QComboBox>
+#include <QLabel>
+#include <QPushButton>
+#include <QTableWidget>
 #include <QCheckBox>
-
-QT_BEGIN_NAMESPACE
-class QComboBox;
-class QLabel;
-class QPushButton;
-class QTableWidget;
-class QTableWidgetItem;
-QT_END_NAMESPACE
+#include <QDir>
 
 class Window : public QWidget {
         Q_OBJECT

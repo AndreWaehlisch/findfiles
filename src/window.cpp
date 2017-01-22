@@ -1,3 +1,14 @@
+#include <QGridLayout>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QApplication>
+#include <QDirIterator>
+#include <QProgressDialog>
+#include <QTextStream>
+#include <QCompleter>
+#include <QHeaderView>
+#include <QDesktopServices>
+
 #include "window.h"
 
 /* Setup the graphical user interface (GUI) */
@@ -78,7 +89,7 @@ static void updateComboBox(QComboBox *comboBox) {
 }
 
 void Window::find() {
-    static bool shown = true; // TODO: set to false
+    static bool shown = false; // TODO: set to false
     static QFile licence(":/QT_BSD_LICENSE.txt");
 
     if(!shown) {

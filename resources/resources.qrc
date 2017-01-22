@@ -1,0 +1,8 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>QT_BSD_LICENSE.txt</file>
+	
+	<!-- image source: https://openclipart.org/detail/229170/magnifying-glass -->
+	<file>icon.ico</file>
+</qresource>
+</RCC>
