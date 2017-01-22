@@ -73,6 +73,21 @@ static void updateComboBox(QComboBox *comboBox) {
 }
 
 void Window::find() {
+    static bool shown = false;
+    static QFile licence(":/QT_BSD_LICENSE.txt");
+
+    if(!shown) {
+        if(!licence.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            exit(1);
+        }
+
+        QByteArray text = licence.readAll();
+
+        QMessageBox::warning(findButton->parentWidget(), tr("Find Files QT BSD Licence"), QString(text));
+
+        shown = true;
+    }
+
     filesTable->setRowCount(0); // reset results
 
     const QString fileName = fileComboBox->currentText().isEmpty() ? "*" : fileComboBox->currentText(); // use '*' if input is empty
