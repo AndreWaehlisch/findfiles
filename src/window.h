@@ -24,9 +24,10 @@ class Window : public QWidget {
         void browse();
         void find();
         void openFileOfItem(int row, int column);
+        void regexCheckBox_onclick();
 
     private:
-        QStringList findFiles(const QStringList &files, const QString &text);
+        QStringList findFiles(const QStringList &files, const QString &text, const QRegularExpression &regex);
         void showFiles(const QStringList &files);
         QComboBox *createComboBox(const QString &text = QString());
         void createFilesTable();

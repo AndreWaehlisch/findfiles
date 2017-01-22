@@ -2,7 +2,7 @@
 
 /* Setup the graphical user interface (GUI) */
 Window::Window(QWidget *parent) : QWidget(parent) {
-    fileLabel = new QLabel(tr("Named:"));
+    fileLabel = new QLabel(tr("File name:"));
     textLabel = new QLabel(tr("Containing text:"));
     directoryLabel = new QLabel(tr("In directory:"));
     filesFoundLabel = new QLabel(tr("0 files(s) found"));
@@ -11,10 +11,11 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     connect(browseButton, &QAbstractButton::clicked, this, &Window::browse);
     findButton = new QPushButton(tr("&Find"), this);
     connect(findButton, &QAbstractButton::clicked, this, &Window::find);
-    recursiveCheckBox = new QCheckBox(tr("Recursive"), this);
-    sensitiveCheckBox = new QCheckBox(tr("Match case"), this);
-    regexCheckBox = new QCheckBox(tr("Enable Regex"), this);
-    wholeWordCheckBox = new QCheckBox(tr("Whole word"), this);
+    recursiveCheckBox = new QCheckBox(tr("Recursive (file)"), this);
+    sensitiveCheckBox = new QCheckBox(tr("Match case (file+text)"), this);
+    regexCheckBox = new QCheckBox(tr("Enable Regex (file+text)"), this);
+    connect(regexCheckBox, &QAbstractButton::clicked, this, &Window::regexCheckBox_onclick);
+    wholeWordCheckBox = new QCheckBox(tr("Whole word (text)"), this);
     hiddenCheckBox = new QCheckBox(tr("Hidden files"), this);
     systemFilesCheckBox = new QCheckBox(tr("System files"), this);
 
@@ -54,6 +55,10 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     resize(1000, 500);
 }
 
+inline void Window::regexCheckBox_onclick() {
+    wholeWordCheckBox->setEnabled(!regexCheckBox->isChecked());
+}
+
 void Window::browse() {
     const QString directory = QFileDialog::getExistingDirectory(this, tr("Find Files"), QDir::currentPath());
 
@@ -73,7 +78,7 @@ static void updateComboBox(QComboBox *comboBox) {
 }
 
 void Window::find() {
-    static bool shown = false;
+    static bool shown = true; // TODO: set to false
     static QFile licence(":/QT_BSD_LICENSE.txt");
 
     if(!shown) {
@@ -93,6 +98,16 @@ void Window::find() {
     const QString fileName = fileComboBox->currentText().isEmpty() ? "*" : fileComboBox->currentText(); // use '*' if input is empty
     const QString text = textComboBox->currentText(); // text to search for inside of files
     const QString path = directoryComboBox->currentText();
+    const QRegularExpression regex(fileName, sensitiveCheckBox->isChecked() ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption); // only used if user requested regex
+
+    if(regexCheckBox->isChecked() && !regex.isValid()) {
+        filesFoundLabel->setText(tr("Invalid Regex!"));
+        filesFoundLabel->setStyleSheet("QLabel { color : red; }");
+        QApplication::beep();
+        return;
+    } else {
+        filesFoundLabel->setStyleSheet("QLabel { color : black; }");
+    }
 
     // add current input to history of combo boxes
     updateComboBox(fileComboBox);
@@ -121,32 +136,49 @@ void Window::find() {
 
     // find files
     if(recursiveCheckBox->isChecked()) {
-        QDirIterator iterator(currentDir.path(), QStringList(fileName), entryListFilters, QDirIterator::Subdirectories); // TODO: path() the correct one here?
+        QDirIterator iterator(currentDir.path(), QStringList(regexCheckBox->isChecked() ? "*" : fileName), entryListFilters, QDirIterator::Subdirectories);
 
         // recursive loop over all files
         while(iterator.hasNext()) {
             files.append(iterator.next());
         }
     } else {
-        files = currentDir.entryList(QStringList(fileName), entryListFilters);
+        files = currentDir.entryList(QStringList(regexCheckBox->isChecked() ? "*" : fileName), entryListFilters);
+    }
+
+    // QDirIterator and QDir only accept wildcards ("*" etc.), so we have to re-filter the results if user requested Regular Expressions (Regex)
+    if(regexCheckBox->isChecked()) {
+        QFileInfo currentFile;
+
+        for(int i = files.size(); i-- > 0;) {
+            currentFile.setFile(files[i]);
+
+            if(!regex.match(currentFile.fileName()).hasMatch()) {
+                files.removeAt(i); // filter out all files which don't match the regex
+            }
+        }
     }
 
     // if we got a search text search for it in the files
     if(!text.isEmpty()) {
-        files = findFiles(files, text);
+        files = findFiles(files, text, regex);
     }
 
     // show results
     showFiles(files);
 }
 
-QStringList Window::findFiles(const QStringList &files, const QString &text) {
+QStringList Window::findFiles(const QStringList &files, const QString &text, const QRegularExpression &regex) {
     QProgressDialog progressDialog(this);
     progressDialog.setCancelButtonText(tr("&Cancel"));
     progressDialog.setRange(0, files.size());
     progressDialog.setWindowTitle(tr("Find Files"));
 
     QStringList foundFiles;
+
+    const bool doRegex = regexCheckBox->isChecked();
+    const bool wholeWord = wholeWordCheckBox->isChecked();
+    const QRegularExpression wholeWordRegex(QString("\\W") + QRegularExpression::escape(text) + QString("\\W")); // insert two non-word characters and use input text as non-regex
 
     for(int i = 0; i < files.size(); ++i) {
         progressDialog.setValue(i);
@@ -170,7 +202,7 @@ QStringList Window::findFiles(const QStringList &files, const QString &text) {
 
                 line = in.readLine();
 
-                if(line.contains(text)) {
+                if(doRegex ? line.contains(regex) : wholeWord ? line.contains(wholeWordRegex) : line.contains(text, sensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive)) {
                     foundFiles << files[i];
                     break;
                 }
