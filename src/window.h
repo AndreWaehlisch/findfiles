@@ -22,7 +22,12 @@ class Window : public QWidget {
         void browse();
         void find();
         void openFileOfItem(int row, int column);
+        void recursiveCheckBox_onclick();
+        void sensitiveCheckBox_onclick();
         void regexCheckBox_onclick();
+        void wholeWordCheckBox_onclick();
+        void hiddenCheckBox_onclick();
+        void systemFilesCheckBox_onclick();
 
     private:
         QStringList findFiles(const QStringList &files, const QString &text, const QRegularExpression &regex);
