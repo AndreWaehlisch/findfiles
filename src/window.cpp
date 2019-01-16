@@ -53,7 +53,16 @@ Window::Window(QWidget *parent) : QWidget(parent) {
     textComboBox = createComboBox();
     directoryComboBox = createComboBox(settings.value("lastDirectory", QDir::currentPath()).toString());
 
-    createFilesTable();
+    filesTable = new QTableWidget(0, 2);
+    filesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    QStringList labels;
+    labels << tr("Filename") << tr("Size (KB)");
+    filesTable->setHorizontalHeaderLabels(labels);
+    filesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    filesTable->verticalHeader()->hide();
+    filesTable->setShowGrid(false);
+    connect(filesTable, &QTableWidget::cellActivated, this, &Window::openFileOfItem);
 
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addWidget(fileLabel, 0, 0);
@@ -282,13 +291,16 @@ QStringList Window::findFiles(const QStringList &files, const QString &text, con
 }
 
 void Window::showFiles(const QStringList &files) {
+    filesTable->setSortingEnabled(false); /* have to disabble sorting when adding items to avoid possible issues */
+
     for(int i = 0; i < files.size(); ++i) {
         QFile file(currentDir.absoluteFilePath(files[i]));
         qint64 size = QFileInfo(file).size();
 
         QTableWidgetItem *fileNameItem = new QTableWidgetItem(files[i]);
         fileNameItem->setFlags(fileNameItem->flags() ^ Qt::ItemIsEditable);
-        QTableWidgetItem *sizeItem = new QTableWidgetItem(tr("%1 KB").arg(int((size + 1023) / 1024)));
+        QTableWidgetItem *sizeItem = new QTableWidgetItem();
+        sizeItem->setData(Qt::DisplayRole, int((size + 1023) / 1024));
         sizeItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
         sizeItem->setFlags(sizeItem->flags() ^ Qt::ItemIsEditable);
 
@@ -300,6 +312,7 @@ void Window::showFiles(const QStringList &files) {
 
     filesFoundLabel->setText(tr("%1 file(s) found").arg(files.size()) + (" (Double click on a file to open it)"));
     filesFoundLabel->setWordWrap(true);
+    filesTable->setSortingEnabled(true);
 }
 
 QComboBox *Window::createComboBox(const QString &text) {
@@ -314,19 +327,6 @@ QComboBox *Window::createComboBox(const QString &text) {
     comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     return comboBox;
-}
-
-void Window::createFilesTable() {
-    filesTable = new QTableWidget(0, 2);
-    filesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-
-    QStringList labels;
-    labels << tr("Filename") << tr("Size");
-    filesTable->setHorizontalHeaderLabels(labels);
-    filesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    filesTable->verticalHeader()->hide();
-    filesTable->setShowGrid(false);
-    connect(filesTable, &QTableWidget::cellActivated, this, &Window::openFileOfItem);
 }
 
 void Window::openFileOfItem(int row, int /* column */) {
