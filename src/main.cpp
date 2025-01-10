@@ -2,8 +2,8 @@
 
 #include "window.h"
 
-int main(int argc, char *argv[]) {
-    Q_INIT_RESOURCE(resources); // init resources (needed for static build)
+int main(int argc, char *argv[])
+{
     QCoreApplication::setOrganizationName("AndreWaehlisch");
     QCoreApplication::setApplicationName("Find Files");
     const QApplication app(argc, argv);
